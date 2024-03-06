@@ -1,2 +1,2 @@
-main: chip8.c main.c chip8.h
-	gcc -o main chip8.c main.c
+build:
+	gcc -Wall ./*.c -I /opt/homebrew/include -L /opt/homebrew/lib/ -lSDL2 -o main 

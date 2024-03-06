@@ -1,0 +1,9 @@
+#define FALSE 0
+#define TRUE 1
+
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 640
+#define PIXEL_SIZE (WINDOW_WIDTH / 64)
+
+#define FPS 60
+#define FRAME_TARGET_TIME (1000 / FPS)

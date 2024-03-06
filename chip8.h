@@ -2,12 +2,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdbool.h>
 
 // Testing
 void displayFrame();
 
 // Init
 void loadSprites();
+
+extern uint8_t V[16];
+extern uint16_t in;
+extern uint16_t stack[64];
+extern uint8_t sp;
+extern uint8_t dt;
+extern uint8_t st;
+extern bool fb[64][32];
+extern uint16_t pc;
+
+extern uint8_t addrMem[4096];
+
+struct pixel {
+    int x;
+    int y;
+    bool on;
+};
 
 // Op Codes
 void cls();
@@ -33,3 +51,14 @@ void ldi(uint16_t opcode);
 void jpv0(uint16_t opcode);
 void rndx(uint16_t opcode);
 void drwxy(uint16_t opcode);
+void skpvx(uint16_t opcode, uint16_t key);
+void sknpvx(uint16_t opcode, uint16_t key);
+void ldvx(uint16_t opcode);
+void ldvx_wait(uint16_t opcode, uint8_t key);
+void lddt(uint16_t opcode);
+void ldst(uint16_t opcode);
+void addi(uint16_t opcode);
+void ldf(uint16_t opcode);
+void ldb(uint16_t opcode);
+void ldivx(uint16_t opcode);
+void ldvx65(uint16_t opcode);
