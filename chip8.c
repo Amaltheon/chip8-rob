@@ -106,8 +106,6 @@ void ldx(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t kk = opcode & 0x00FF;
-    printf("V%i", x);
-    printf("=%i\n", kk);
     V[x] = kk;
 }
 
@@ -117,8 +115,6 @@ void addx(uint16_t opcode)
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint8_t kk = opcode & 0x00FF;
     V[x] += kk;
-    printf("V%i = ", x);
-    printf("%i\n", V[x]);
 }
 
 // 8xy0 Stores the value of the register Vy in Vx
@@ -126,8 +122,7 @@ void ldvxvy(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
-    uint8_t vy = V[y];
-    V[x] = vy;
+    V[x] = V[y];
 }
 
 // 8xy1 Bitwise OR on Vx and Vy. Stores result in Vx
@@ -135,7 +130,7 @@ void orxy(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
-    V[x] = V[x] | V[y];
+    V[x] |= V[y];
 }
 
 // 8xy2 Bitwise AND on Vx and Vy. Stores result in Vx
@@ -143,7 +138,7 @@ void andxy(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
-    V[x] = V[x] & V[y];
+    V[x] &= V[y];
 }
 
 // 8xy3 XOR on Vx and Vy then store in Vx
@@ -151,7 +146,7 @@ void xorxy(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
-    V[x] = V[x] ^ V[y];
+    V[x] ^= V[y];
 }
 
 // 8xy4 Set Vx = Vx + Vy, set VF = carry
@@ -159,14 +154,14 @@ void addxy(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
-    uint16_t sum = V[x] + V[y];
+    uint16_t sum = (V[x] + V[y]);
+    V[x] += V[y];
     if(sum > 255){
         V[0xF] = 1;
     }
     else{
         V[0xF] = 0;
     }
-    V[x] = sum & 0xFF;
 }
 
 // 8xy5 Set Vx = Vx - Vy, Set VF = NOT borrow
@@ -174,13 +169,14 @@ void subxy(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
-    if(V[x] > V[y]){
+    bool flag = V[x] >= V[y];
+    V[x] -= V[y];
+    if(flag){
         V[0xF] = 1;
     } 
     else{
         V[0xF] = 0;
     }
-    V[x] = V[x] - V[y];
 }
 
 // 8xy6 Set Vx = Vx SHR 1
@@ -188,14 +184,11 @@ void shrxy(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
-    uint8_t sig = V[x] & 0b00000001;
-    if(sig == 1){
-        V[0xF] = 1;
-    }
-    else{
-        V[0xF] = 0;
-    }
-    V[x] = V[x] / 2;
+    V[x] = V[y];
+    uint8_t sig = V[x] % 2;
+
+    V[x] = V[x] >> 1;
+    V[0xF] = sig;
 }
 
 // 8xy7 Set Vx = Vy - Vx, set VF = NOT borrow
@@ -203,27 +196,30 @@ void subnxy(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
-    if(V[y] > V[x]){
+    bool flag = V[y] >= V[x];
+    V[x] = (V[y] - V[x]);
+    if(flag){
         V[0xF] = 1;
     }
     else{
         V[0xF] = 0;
     }
-    V[x] = V[y] - V[x];
 }
 
 // 8xyE Set Vx = Vx SHL 1
 void shlx(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
-    uint8_t sig = V[x] & 0b00000001;
-    if(sig == 1){
-        V[0xF] = 1;
+    uint16_t y = (opcode & 0x00F0) >> 4;
+    V[x] = V[y];
+    uint8_t sig = V[x] & 0b10000000;
+    V[x] = V[x] << 1;
+    if(sig == 128){
+        V[0xF] = 1; 
     }
     else{
         V[0xF] = 0;
     }
-    V[x] = V[x] * 2;
 }
 
 // 9xy0 Skip next instruction if Vx != Vy
@@ -266,8 +262,8 @@ void drwxy(uint16_t opcode)
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
     uint16_t n = opcode & 0x000F;
-    uint16_t xCoord = V[x] + 6;
-    uint16_t yCoord = V[y];
+    uint16_t xCoord = V[x] & 63;
+    uint16_t yCoord = V[y] & 31;
     printf("X = %i\n", xCoord);
     printf("Y = %i\n", yCoord);
     printf("n = %i\n", n);
@@ -276,25 +272,39 @@ void drwxy(uint16_t opcode)
     
     for(int i = in; i<(in+n); i++){
         uint8_t sprite = addrMem[i];
+        if(yCoord > 31){
+            break;
+        }
+        xCoord = V[x] & 63;
         for(int j=0; j<8; j++) {
-            if(sprite & 1) {
-                if(fb[xCoord - j][yCoord] == true) {
+            // index is 0-63 not 64
+            if(xCoord > 63){
+                break;
+            }
+            if((sprite & 0b10000000) == 128) {
+                if(fb[xCoord][yCoord] == true) {
                     V[0xF] = 1;
-                    fb[xCoord - j][yCoord] = false;
+                    fb[xCoord][yCoord] = false;
+                    sprite <<= 1;
+                    xCoord++;
                     continue;
                 }
-                fb[xCoord - j][yCoord] = true;
+                fb[xCoord][yCoord] = true;
             }
             else {
-                if(fb[xCoord - j][yCoord] == true) {
-                    fb[xCoord - j][yCoord] = true;
-                    continue;
-                }
-                fb[xCoord - j][yCoord] = false;
+                // if(fb[xCoord][yCoord] == true) {
+                //     fb[xCoord][yCoord] = true;
+                //     sprite <<= 1;
+                //     xCoord++;
+                //     continue;
+                // }
+                fb[xCoord][yCoord] = false;
             }
-            sprite >>= 1;
+            xCoord++;
+            sprite <<= 1;
         }
         yCoord++;
+
     }
 }
 
@@ -365,11 +375,14 @@ void ldb(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint8_t num = V[x];
-    for(int i=0; i<3; i++){
-        uint8_t digit = num % 10;
-        addrMem[in + (2 - i)] = digit;
-        num = num / 10;
-    } 
+
+    uint8_t ones = num % 10;
+    uint8_t tens = (num / 10) % 10;
+    uint8_t hundreds = (num /100) % 10;
+
+    addrMem[in] = hundreds;
+    addrMem[in + 1] = tens;
+    addrMem[in + 2] = ones;
 }
 
 // Fx55 - LD [I], Vx Store registers V0 through Vx in memory starting at location I.
@@ -377,7 +390,8 @@ void ldivx(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
     for(int i = 0; i<=x; i++) {
-        addrMem[in + i] = V[i];
+        uint16_t index = (in + i);
+        addrMem[index] = V[i];
     }
 }
 
@@ -385,7 +399,8 @@ void ldivx(uint16_t opcode)
 void ldvx65(uint16_t opcode)
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
-    for(int i = 0; i<=x ; i++) {
-        V[i] = addrMem[in + i];
+    for(int i = 0; i<=x; i++) {
+        uint16_t index = (in + i);
+        V[i] = addrMem[index];
     }
 }

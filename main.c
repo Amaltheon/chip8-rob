@@ -147,6 +147,14 @@ void render(struct pixel pixels[64][32]) {
 
 void setup() {
     loadSprites();
+    // init stack pointer
+    sp = 0;
+
+    in = 0;
+    // init stack memory
+    for(int i=0; i<64; i++) {
+        stack[i] = 0;
+    }
 }
 
 void destroy_window() {
@@ -369,7 +377,7 @@ int main() {
     uint8_t data[4096];
     FILE *file;
 
-    file = fopen("./roms/3-corax+.ch8", "rb");
+    file = fopen("./roms/4-flags.ch8", "rb");
     if(file == NULL) {
         printf("Error opening file!");
         return 1;
@@ -386,6 +394,7 @@ int main() {
     struct pixel pixels[64][32];
     while (running) {
         uint8_t current_key = process_input();
+        printf("current_key = %i\n", current_key);
         uint16_t opcode = (addrMem[pc] << 8 ) + addrMem[pc+1];
         operate(opcode, pixels, current_key);
         update(pixels);
