@@ -18,6 +18,8 @@ extern uint8_t dt;
 extern uint8_t st;
 extern bool fb[64][32];
 extern uint16_t pc;
+extern uint8_t keys[16];
+extern int timer_counter;
 
 extern uint8_t addrMem[4096];
 
@@ -51,10 +53,10 @@ void ldi(uint16_t opcode);
 void jpv0(uint16_t opcode);
 void rndx(uint16_t opcode);
 void drwxy(uint16_t opcode);
-void skpvx(uint16_t opcode, uint16_t key);
-void sknpvx(uint16_t opcode, uint16_t key);
+void skpvx(uint16_t opcode, uint8_t keys[]);
+void sknpvx(uint16_t opcode, uint8_t keys[]);
 void ldvx(uint16_t opcode);
-void ldvx_wait(uint16_t opcode, uint8_t key);
+void ldvx_wait(uint16_t opcode, uint8_t keys[]);
 void lddt(uint16_t opcode);
 void ldst(uint16_t opcode);
 void addi(uint16_t opcode);

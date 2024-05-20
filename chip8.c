@@ -8,6 +8,8 @@ uint8_t dt;
 uint8_t st;
 bool fb[64][32];
 uint16_t pc = 512;
+uint8_t keys[16];
+int timer_counter;
 
 uint8_t addrMem[4096];
 
@@ -131,6 +133,7 @@ void orxy(uint16_t opcode)
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
     V[x] |= V[y];
+    V[0xF] = 0;
 }
 
 // 8xy2 Bitwise AND on Vx and Vy. Stores result in Vx
@@ -139,6 +142,7 @@ void andxy(uint16_t opcode)
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
     V[x] &= V[y];
+    V[0xF] = 0;
 }
 
 // 8xy3 XOR on Vx and Vy then store in Vx
@@ -147,6 +151,7 @@ void xorxy(uint16_t opcode)
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
     V[x] ^= V[y];
+    V[0xF] = 0;
 }
 
 // 8xy4 Set Vx = Vx + Vy, set VF = carry
@@ -264,9 +269,6 @@ void drwxy(uint16_t opcode)
     uint16_t n = opcode & 0x000F;
     uint16_t xCoord = V[x] & 63;
     uint16_t yCoord = V[y] & 31;
-    printf("X = %i\n", xCoord);
-    printf("Y = %i\n", yCoord);
-    printf("n = %i\n", n);
 
     V[0xF] = 0;
     
@@ -292,12 +294,6 @@ void drwxy(uint16_t opcode)
                 fb[xCoord][yCoord] = true;
             }
             else {
-                // if(fb[xCoord][yCoord] == true) {
-                //     fb[xCoord][yCoord] = true;
-                //     sprite <<= 1;
-                //     xCoord++;
-                //     continue;
-                // }
                 fb[xCoord][yCoord] = false;
             }
             xCoord++;
@@ -309,19 +305,19 @@ void drwxy(uint16_t opcode)
 }
 
 // Ex9E - SKP Vx Skip next instruction if key with the value of Vx is pressed.
-void skpvx(uint16_t opcode, uint16_t key)
-{
+void skpvx(uint16_t opcode, uint8_t keys[])
+{    
     uint16_t x = (opcode & 0x0F00) >> 8;
-    if(x == key){
+    if(V[x] == keys[V[x]]){
         pc+=2;
     }
 }
 
 // ExA1 - SKNP Vx Skip next instruction if key with the value of Vx is not pressed.
-void sknpvx(uint16_t opcode, uint16_t key)
+void sknpvx(uint16_t opcode, uint8_t keys[])
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
-    if(x != key){
+    if(V[x] != keys[V[x]]){
         pc+=2;
     }
 }
@@ -334,10 +330,25 @@ void ldvx(uint16_t opcode)
 }
 
 // Fx0A - LD Vx, K Wait for a key press, store the value of the key in Vx.
-void ldvx_wait(uint16_t opcode, uint8_t key)
+void ldvx_wait(uint16_t opcode, uint8_t keys[])
 {
     uint16_t x = (opcode & 0x0F00) >> 8;
-    V[x] = key;
+    bool wait = true;
+    int index;
+    for(int i = 0; i<16; i++) {
+        if(keys[i] != 255) {
+            printf("key found, pressing %i\n", keys[i]);
+            wait = false;
+            index = i;
+            break;
+        }
+    }
+    if(wait) {
+        pc-=2;
+    }
+    else {
+        V[x] = keys[index];
+    }
 }
 
 // Fx15 - LD DT, Vx Set delay timer = Vx.
@@ -393,6 +404,7 @@ void ldivx(uint16_t opcode)
         uint16_t index = (in + i);
         addrMem[index] = V[i];
     }
+    in = in + x + 1;
 }
 
 // Fx65 - LD Vx, [I] Read registers V0 through Vx from memory starting at location I
@@ -403,4 +415,5 @@ void ldvx65(uint16_t opcode)
         uint16_t index = (in + i);
         V[i] = addrMem[index];
     }
+    in = in + x + 1;
 }
