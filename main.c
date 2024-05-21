@@ -44,43 +44,16 @@ int initialise_window(void) {
     return TRUE;
 }
 
-void update(struct pixel pixels[64][32]) {
-    int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time);
-
-    if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
-        SDL_Delay(time_to_wait);
-    }
-
-    dt--;
-    st--;
-    
-    last_frame_time = SDL_GetTicks();
-    for(int i=0; i<64; i++) {
-        for(int j=0; j<32; j++) {
-            if(fb[i][j]) {
-                pixels[i][j].x = i;
-                pixels[i][j].y = j;
-                pixels[i][j].on = true;
-            }
-            else {
-                pixels[i][j].x = i;
-                pixels[i][j].y = j;
-                pixels[i][j].on = false;
-            }
-        }
-    }
-}
-
 void render(struct pixel pixels[64][32]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0 , 255);
     SDL_RenderClear(renderer);
 
     for(int i=0; i<64; i++) {
         for(int j=0; j<32; j++) {
-            if(pixels[i][j].on) {
+            if(fb[i][j]) {
                 SDL_Rect pixel_rect = {
-                    (int)pixels[i][j].x * PIXEL_SIZE,
-                    (int)pixels[i][j].y * PIXEL_SIZE,
+                    (int)i * PIXEL_SIZE,
+                    (int)j * PIXEL_SIZE,
                     PIXEL_SIZE, //width
                     PIXEL_SIZE //height
                 };
@@ -124,6 +97,17 @@ void operate(uint16_t opcode, struct pixel pixels[64][32], uint8_t keys[]) {
     //printf("pc = %i\n", pc);
     //printf("opcode: %x \n", opcode);
     //printf("index I = %i \n", in);
+    timer_counter++;
+    if (timer_counter == 9) {
+        if(st > 0) {
+            st--;
+        }
+        if(dt > 0) {
+            dt--;
+        }
+        timer_counter = 0;
+        render(pixels);
+    }
     uint16_t expression = opcode & 0xF000;
     uint16_t flag = (opcode & 0x000F);
     uint16_t double_flag = (opcode & 0x00FF);
@@ -132,8 +116,6 @@ void operate(uint16_t opcode, struct pixel pixels[64][32], uint8_t keys[]) {
     case 0:
         if(opcode == 0x00E0) {
             cls();
-            update(pixels);
-            render(pixels);
             pc+=2;
             //printf("cls\n");
             break;
@@ -259,8 +241,6 @@ void operate(uint16_t opcode, struct pixel pixels[64][32], uint8_t keys[]) {
     case 0xD000:
         drwxy(opcode);
         //printf("drwxy\n");
-        update(pixels);
-        render(pixels);
         pc+=2;
         break;
     case 0xE000:
@@ -336,7 +316,7 @@ int main() {
     uint8_t data[4096];
     FILE *file;
 
-    file = fopen("./roms/delay_timer_test.ch8", "rb");
+    file = fopen("./roms/space_invaders.ch8", "rb");
     if(file == NULL) {
         printf("Error opening file!");
         return 1;
@@ -352,6 +332,7 @@ int main() {
     setup();
     struct pixel pixels[64][32];
     while (running) {
+        SDL_Delay(1);
         SDL_Event e;
         while( SDL_PollEvent( &e) ) {
             switch( e.type ){
@@ -479,6 +460,7 @@ int main() {
         }
         uint16_t opcode = (addrMem[pc] << 8 ) + addrMem[pc+1];
         operate(opcode, pixels, keys);
+        //update(pixels);
     }
 
 

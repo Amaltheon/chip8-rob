@@ -133,7 +133,7 @@ void orxy(uint16_t opcode)
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
     V[x] |= V[y];
-    V[0xF] = 0;
+    //V[0xF] = 0;
 }
 
 // 8xy2 Bitwise AND on Vx and Vy. Stores result in Vx
@@ -142,7 +142,7 @@ void andxy(uint16_t opcode)
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
     V[x] &= V[y];
-    V[0xF] = 0;
+    //V[0xF] = 0;
 }
 
 // 8xy3 XOR on Vx and Vy then store in Vx
@@ -151,7 +151,7 @@ void xorxy(uint16_t opcode)
     uint16_t x = (opcode & 0x0F00) >> 8;
     uint16_t y = (opcode & 0x00F0) >> 4;
     V[x] ^= V[y];
-    V[0xF] = 0;
+    //V[0xF] = 0;
 }
 
 // 8xy4 Set Vx = Vx + Vy, set VF = carry
@@ -287,11 +287,10 @@ void drwxy(uint16_t opcode)
                 if(fb[xCoord][yCoord] == true) {
                     V[0xF] = 1;
                     fb[xCoord][yCoord] = false;
-                    sprite <<= 1;
-                    xCoord++;
-                    continue;
                 }
-                fb[xCoord][yCoord] = true;
+                else {
+                    fb[xCoord][yCoord] = true;
+                }
             }
             else {
                 fb[xCoord][yCoord] = false;
